@@ -56,8 +56,15 @@ const tryOnViews = [
   { image: "photo-1490481651871-ab68de25d43d", pose: "Back view" },
 ];
 
-function getCategoryFromPath() {
-  const path = window.location.pathname.toLowerCase();
+function getCurrentRoute() {
+  const hash = window.location.hash;
+  if (hash.startsWith("#/")) return hash.slice(1).toLowerCase();
+
+  const pathname = window.location.pathname.toLowerCase();
+  return pathname === "/" ? "/" : pathname;
+}
+
+function getCategoryFromRoute(path: string) {
   return categories.find((category) => path.startsWith(`/shop/${category.toLowerCase()}`));
 }
 
@@ -106,7 +113,7 @@ function UnsplashImage({ id, alt }: { id: string; alt: string }) {
 function ProductListing() {
   return (
     <section className="product-listing-page">
-      <a className="back-link" href="/shop/women">
+      <a className="back-link" href="#/shop/women">
         <span aria-hidden="true">←</span> Shop Women
       </a>
       <div className="product-listing-heading">
@@ -116,7 +123,7 @@ function ProductListing() {
       </div>
       <div className="product-grid">
         {shirts.map((shirt) => (
-          <a className="product-card" href={`/product/${shirt.slug}`} key={shirt.slug}>
+          <a className="product-card" href={`#/product/${shirt.slug}`} key={shirt.slug}>
             <div className="product-card-image">
               <UnsplashImage id={shirt.image} alt={`${shirt.name} on a model`} />
             </div>
@@ -216,7 +223,7 @@ function ProductDetails({ slug }: { slug: string }) {
   return (
     <>
       <section className="product-details-page">
-        <a className="back-link" href="/shop/women/casual-wear">
+        <a className="back-link" href="#/shop/women/casual-wear">
           <span aria-hidden="true">←</span> Back to casual shirts
         </a>
         <div className="product-details">
@@ -247,10 +254,16 @@ function ProductDetails({ slug }: { slug: string }) {
 }
 
 function App() {
-  const selectedCategory = getCategoryFromPath();
-  const path = window.location.pathname.toLowerCase();
+  const [path, setPath] = useState(getCurrentRoute);
+  const selectedCategory = getCategoryFromRoute(path);
   const isCasualListing = path === "/shop/women/casual-wear";
   const productSlug = path.startsWith("/product/") ? path.slice("/product/".length) : null;
+
+  useEffect(() => {
+    const syncRoute = () => setPath(getCurrentRoute());
+    window.addEventListener("hashchange", syncRoute);
+    return () => window.removeEventListener("hashchange", syncRoute);
+  }, []);
 
   return (
     <div className="site-shell">
@@ -263,7 +276,7 @@ function App() {
           {categories.map((category) => (
             <a
               aria-current={selectedCategory === category ? "page" : undefined}
-              href={`/shop/${category.toLowerCase()}`}
+              href={`#/shop/${category.toLowerCase()}`}
               key={category}
             >
               {category}
@@ -310,7 +323,7 @@ function App() {
                 selectedCategory === "Women" && subcategory === "Casual wear" ? (
                   <a
                     className="subcategory-card"
-                    href="/shop/women/casual-wear"
+                    href="#/shop/women/casual-wear"
                     key={subcategory}
                   >
                     <img
